@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe 'puppet_ivanti::ivanti' do
+describe 'ivanti::ivanti' do
   on_supported_os.each do |os, os_facts|
     context "on #{os}" do
       let(:facts) { os_facts }

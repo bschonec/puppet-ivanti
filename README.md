@@ -1,4 +1,4 @@
-# puppet_ivanti
+# ivanti
 
 Welcome to your new module. A short overview of the generated parts can be found
 in the [PDK documentation][1].
@@ -9,10 +9,10 @@ information to include in your README.
 ## Table of Contents
 
 1. [Description](#description)
-1. [Setup - The basics of getting started with puppet_ivanti](#setup)
-    * [What puppet_ivanti affects](#what-puppet_ivanti-affects)
+1. [Setup - The basics of getting started with ivanti](#setup)
+    * [What ivanti affects](#what-ivanti-affects)
     * [Setup requirements](#setup-requirements)
-    * [Beginning with puppet_ivanti](#beginning-with-puppet_ivanti)
+    * [Beginning with ivanti](#beginning-with-ivanti)
 1. [Usage - Configuration options and additional functionality](#usage)
 1. [Limitations - OS compatibility, etc.](#limitations)
 1. [Development - Guide for contributing to the module](#development)
@@ -27,7 +27,7 @@ is what they want.
 
 ## Setup
 
-### What puppet_ivanti affects **OPTIONAL**
+### What ivanti affects **OPTIONAL**
 
 If it's obvious what your module touches, you can skip this section. For
 example, folks can probably figure out that your mysql_instance module affects
@@ -49,7 +49,7 @@ another module, etc.), mention it here.
 If your most recent release breaks compatibility or requires particular steps
 for upgrading, you might want to include an additional "Upgrading" section here.
 
-### Beginning with puppet_ivanti
+### Beginning with ivanti
 
 The very basic steps needed for a user to get the module up and running. This
 can include setup steps, if necessary, or it can be an example of the most basic

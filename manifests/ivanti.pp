@@ -3,6 +3,6 @@
 # A description of what this class does
 #
 # @example
-#   include puppet_ivanti::ivanti
-class puppet_ivanti::ivanti {
+#   include ivanti::ivanti
+class ivanti::ivanti {
 }
