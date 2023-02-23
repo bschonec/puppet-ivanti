@@ -31,9 +31,9 @@ class ivanti (
   }
 
   # create sudoers entry
-  sudo::conf {'testlandesk':
-    priority => 10,
-    content => 'landesk ALL=(ALL) NOPASSWD: ALL',
-  }
+  #sudo::conf {'testlandesk':
+  #  priority => 10,
+  #  content => 'landesk ALL=(ALL) NOPASSWD: ALL',
+  #}
 
 }
