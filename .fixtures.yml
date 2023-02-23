@@ -4,4 +4,8 @@
 fixtures:
   forge_modules:
       stdlib: "puppetlabs/stdlib"
-      sudo: "saz-sudo"
+      #sudo: "saz/sudo"
+  repositories:
+    sudo: "https://github.com/saz/puppet-sudo.git"
+  #  stdlib: "https://github.com/puppetlabs/puppetlabs-stdlib.git"
+    

@@ -19,10 +19,10 @@ describe 'ivanti' do
 
       context 'Check sudo file entry for landesk user' do
         let :facts do
-          { sudoversion => '1.8.23' }
+          os_facts.merge({ sudoversion => '1.8.23' })
         end
 
-        #it { is_expected.to contain_file('/etc/sudoers.d/10_landesk').with_content(%r{^landesk\s+ALL=\(ALL\)\s+NOPASSWD:\s+ALL$}) }
+        it { is_expected.to contain_file('/etc/sudoers.d/10_landesk').with_content(%r{^landesk\s+ALL=\(ALL\)\s+NOPASSWD:\s+ALL$}) }
 
         # Ensure certificate file copied
         # Ensure landesk is in sudoers
