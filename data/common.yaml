@@ -40,3 +40,9 @@ ivanti::config_files:
     mode: '0644'
     notify:
       - Service[cba8]
+
+ivanti::extra_dirs:
+  - /var/cbaroot/broker
+  - /var/cbaroot/certs
+  - /var/tmp
+  - /scan_repository

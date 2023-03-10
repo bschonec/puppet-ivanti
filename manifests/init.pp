@@ -60,6 +60,17 @@
 # @param install_dir
 # The directory in which the Ivanti agent will be installed.
 #
+# @param extra_dirs
+# An array of directories -- relative to the ${install_dir} path that the ivanti-cba8
+# package creates in the postinstall scriptlet of the RPM package.  These directories
+# are root owned and this screws stuff up unless they get changed back to landesk:landesk.
+#
+# @param user
+# The landesk user name.
+#
+# @param group
+# The landesk group name.
+#
 class ivanti (
   String $core_certificate,
   Stdlib::Fqdn $core_fqdn,
@@ -75,6 +86,9 @@ class ivanti (
   Boolean $privilegeescalationallowed     = true,
   Hash $config_files                      = $ivanti::config_files,
   Stdlib::Unixpath $install_dir           = '/opt/landesk',
+  Array[Stdlib::Unixpath] $extra_dirs     = $ivanti::extra_dirs,
+  String $user                            = 'landesk',
+  String $group                           = 'landesk',
 ) {
   # Install the Ivanti packages
   package { $packages:
@@ -91,11 +105,30 @@ class ivanti (
 
   # Install the SSL certificate from the core server.
   file { "${install_dir}/var/cbaroot/certs/${core_certificate}":
-    owner   => 'landesk',
-    group   => 'landesk',
+    owner   => $user,
+    group   => $group,
     mode    => '0644',
     source  => $external_url,
     require => Package[$packages],
+  }
+
+  # These directories get created by the ivanti-cba8 RPM as the root user and need to be changed
+  # back to landesk:landesk for some of the daemons to work properly.  These need to be managed
+  # AFTER the SSL certificate (above) is created BEFORE ldiscan since broker_config creates
+  # certificates in ${install_dir}/var/cbaroot/broker directory.
+  # I could have just made $install_dir recurse => true, but limiting the number of recursive files
+  # to be managed helps make the Puppet run faster.
+  $extra_dirs.each | $extra_dir | {
+    file { "${install_dir}/${extra_dir}":
+      ensure   => directory,
+      owner    => $user,
+      group    => $user,
+      recurse  => true,
+      before   => Exec['ldiscan'],
+      require  => [Exec['broker_config'], File["${install_dir}/var/cbaroot/certs/${core_certificate}"],],
+      notify   => Exec['ldiscan'],
+      loglevel => 'verbose',
+    }
   }
 
   # 0644 is not the default mode for the conf files; 0640 is the default mode.  Unfortunately, the
@@ -103,8 +136,8 @@ class ivanti (
   # we have to accommodate that fact by merging in default settings into the $config_files (below).
   # The following files have ./bin and ./etc
   $config_file_defaults = {
-    owner   => 'landesk',
-    group   => 'landesk',
+    owner => $user,
+    group => $group,
     mode    => '0640',
     before  => Service['cba8'], # Ensure these files are managed before starting/restarting
     notify  => Service['cba8'],
@@ -119,6 +152,7 @@ class ivanti (
       *       => $attributes,
       path    => "${install_dir}/etc/${config_file}.conf",
       content => template("ivanti/${config_file}.conf.erb"),
+      require => Package[$packages],
     }
   }
 
@@ -126,14 +160,14 @@ class ivanti (
     ensure  => 'running',
     enable  => true,
     require => Package[$packages],
-    notify  => Exec['broker_config'],
+    notify  => Exec['agent_settings'],
   }
 
   # TODO firewall rules OR a firewall XML file.
 
   # Execute the commands to register and then scan the agent.
   # The schedule exec is removed in the short term because the binary fails to return a zero return code.
-  # $execs = ['agent_settings', 'broker_config', 'inventory', 'ldiscan', 'policy', 'schedule', 'software_distribution', 'vulnerability',]
+  # $execs = ['agent_settings', 'broker_config', 'inventory', 'ldiscan', 'policy', 'schedule', 'software_distribution',]
   # Since all of the execs are run in order, we only need to require Service[cba8] on the first exec in the list (agent_settings).
   exec { 'agent_settings':
     command     => "${install_dir}/bin/agent_settings -V",
@@ -141,29 +175,47 @@ class ivanti (
     logoutput   => true,
     refreshonly => true,
     require     => Service['cba8'],
-    notify      => Exec['broker_config'],
+    before      => File["${install_dir}/cache"],
+    notify      => [Exec['broker_config'], File["${install_dir}/cache"],],
   }
+
+  # The agent_settings binary will create ${install_dir}/cache directory and subdirectories
+  # but they're owned by root so we'll have to ensure landesk:landes for all directories.
+  file { "${install_dir}/cache":
+    ensure  => directory,
+    owner   => $user,
+    group   => $group,
+    #recurse => true,
+    before  => Exec['broker_config'],
+  }
+
   exec { 'broker_config':
     command     => "${install_dir}/bin/broker_config -V",
     user        => 'root',
     logoutput   => true,
     refreshonly => true,
+    before      => Exec['ldiscan'],
     notify      => Exec['ldiscan'],
   }
+
   exec { 'ldiscan':
     command     => "${install_dir}/bin/ldiscan -V",
     user        => 'root',
     logoutput   => true,
     refreshonly => true,
+    before      => Exec['vulscan'],
     notify      => Exec['vulscan'],
   }
+
   exec { 'vulscan':
     command     => "${install_dir}/bin/vulscan -V",
     user        => 'root',
     logoutput   => true,
     refreshonly => true,
+    before      => Exec['map-fetchpolicy'],
     notify      => Exec['map-fetchpolicy'],
   }
+
   exec { 'map-fetchpolicy':
     command     => "${install_dir}/bin/map-fetchpolicy -V",
     user        => 'root',
@@ -175,5 +227,5 @@ class ivanti (
   # The ordering here was taken from the .sdtout.log file that is created when installing Ivanti
   # from the bash script.  I'm not sure if the ordering really matters but it makes sense that the broker_config
   # needs to run before ldiscan.  All other ordering is semi-arbitrary (ie, I made a best guess).
-  Exec['agent_settings'] ~> Exec['broker_config'] ~> Exec['ldiscan'] ~> Exec['vulscan'] ~> Exec['map-fetchpolicy']
+  #Exec['agent_settings'] ~> Exec['broker_config'] ~> Exec['ldiscan'] ~> Exec['vulscan'] ~> Exec['map-fetchpolicy']
 }
