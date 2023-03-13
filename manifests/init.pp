@@ -119,7 +119,7 @@ class ivanti (
   # I could have just made $install_dir recurse => true, but limiting the number of recursive files
   # to be managed helps make the Puppet run faster.
   $extra_dirs.each | $extra_dir | {
-    file { "${install_dir}/${extra_dir}":
+    file { "${install_dir}${extra_dir}":  # Note the missing / because the common.yaml variable is easier to read.
       ensure   => directory,
       owner    => $user,
       group    => $group,
@@ -136,7 +136,6 @@ class ivanti (
   # we have to accommodate that fact by merging in default settings into the $config_files (below).
   # The following files have ./bin and ./etc
   $config_file_defaults = {
-    ensure => 'file',
     owner => $user,
     group => $group,
     mode    => '0640',
@@ -149,9 +148,10 @@ class ivanti (
   $config_files.each | $config_file, $config_file_attributes | {
     # Merge any settings from the hiera hash to create a default set of parameters.
     $attributes = deep_merge($config_file_defaults, $config_file_attributes)
-    file { "${config_file}.conf":
+    file { "${install_dir}/etc/${config_file}.conf":
       *       => $attributes,
-      path    => "${install_dir}/etc/${config_file}.conf",
+      ensure  => 'file',
+      #path    => "${install_dir}/etc/${config_file}.conf",
       content => template("ivanti/${config_file}.conf.erb"),
       require => Package[$packages],
     }

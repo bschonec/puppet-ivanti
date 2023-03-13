@@ -32,20 +32,20 @@ describe 'ivanti' do
         end
 
         context 'Check configuration files for Privilege escallation true' do
-          #  config_files = ['agent_settings', 'broker_config', 'inventory', 'policy', 'schedule', 'software_distribution', 'vulnerability', 'hardware']
-          #  config_files.each do |config_file|
-          it {
-            is_expected.to contain_file('/opt/landesk/etc/policy.conf').with(
-                'ensure' => 'file',
-                #                  'owner' => 'landesk',
-                #    'group' => 'landesk',
-                #    'mode' => '0640',
-              )
-            #       #      # is_expected.to contain_file("/opt/landesk/etc/#{config_file}").with(
-            #      #   .with_content(%rprivilegeEscalationAllowed)
-            # )
-          }
-          #  end
+          config_files = ['agent_settings', 'broker_config', 'inventory', 'policy', 'schedule', 'software_distribution', 'vulnerability', 'hardware']
+          config_files.each do |config_file|
+            it {
+              is_expected.to contain_file("/opt/landesk/etc/#{config_file}.conf").with(
+                  'ensure' => 'file',
+                                    'owner' => 'landesk',
+                      'group' => 'landesk',
+                      'mode' => '0640',
+                )
+              #       #      # is_expected.to contain_file("/opt/landesk/etc/#{config_file}").with(
+              #      #   .with_content(%rprivilegeEscalationAllowed)
+              # )
+            }
+          end
         end
 
         context 'Check permissions of directories that get created by Landesk agents' do
@@ -54,9 +54,9 @@ describe 'ivanti' do
             it {
               is_expected.to contain_file("/opt/landesk#{extra_dir}").with(
                 'ensure' => 'directory',
-                # 'owner' => 'landesk',
-                # 'group' => 'landesk',
-                # 'recurse' => 'true',
+                'owner' => 'landesk',
+                'group' => 'landesk',
+                'recurse' => 'true',
               )
             }
           end
