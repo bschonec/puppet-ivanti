@@ -122,7 +122,7 @@ class ivanti (
     file { "${install_dir}/${extra_dir}":
       ensure   => directory,
       owner    => $user,
-      group    => $user,
+      group    => $group,
       recurse  => true,
       before   => Exec['ldiscan'],
       require  => [Exec['broker_config'], File["${install_dir}/var/cbaroot/certs/${core_certificate}"],],
@@ -136,6 +136,7 @@ class ivanti (
   # we have to accommodate that fact by merging in default settings into the $config_files (below).
   # The following files have ./bin and ./etc
   $config_file_defaults = {
+    ensure => 'file',
     owner => $user,
     group => $group,
     mode    => '0640',
@@ -182,11 +183,11 @@ class ivanti (
   # The agent_settings binary will create ${install_dir}/cache directory and subdirectories
   # but they're owned by root so we'll have to ensure landesk:landes for all directories.
   file { "${install_dir}/cache":
-    ensure  => directory,
-    owner   => $user,
-    group   => $group,
+    ensure => directory,
+    owner  => $user,
+    group  => $group,
     #recurse => true,
-    before  => Exec['broker_config'],
+    before => Exec['broker_config'],
   }
 
   exec { 'broker_config':
