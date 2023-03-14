@@ -100,30 +100,17 @@ describe 'ivanti' do
         }
       end
 
-
-
-
-context 'Check Exec resources' do
-
-
- 503             should contain_exec('authconfig-mkhomedir').with({
- 504               :command => '/usr/sbin/authconfig --enablesssd --enablesssdauth --enablemkhomedir --update',
- 505               :unless  => "/usr/bin/test \"`/usr/sbin/authconfig --enablesssd --enablesssdauth --enablemkhomedir --test`\" = \"`/usr/sbin/authconfig --test`\"",
- 506               :require => 'File[sssd.conf]',
-done
-
-
-
-      # 34         it { is_expected.to contain_class('chrony::install').that_comes_before('Class[chrony::config]') }
-      # 35         it { is_expected.to contain_class('chrony::config').that_notifies('Class[chrony::service]') }
-
-      #
-      #        # TODO: redo this  it { is_expected.to contain_file('/etc/sudoers.d/10_landesk').with_content(%r{^landesk\s+ALL=\(ALL\)\s+NOPASSWD:\s+ALL$}) }
-      #
-      #        # Ensure landesk is in sudoers
-      #        # landesk ALL=(ALL)  NOPASSWD: ALL
-      #        # Defaults:landesk !requiretty
-      #        #
+      execs = ['agent_settings', 'broker_config', 'ldiscan', 'vulscan', 'map-fetchpolicy']
+      context 'Check Exec resources' do
+        execs.each do |exec|
+          it {
+              is_expected.to contain_exec(exec)
+              #.with_command("/etc/landesk/bin/#{exec} -V")
+              .with_user('root')
+              .with_refreshonly('true')
+          }
+        end
+      end
     end
   end
 end
