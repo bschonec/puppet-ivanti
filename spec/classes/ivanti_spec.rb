@@ -42,25 +42,42 @@ describe 'ivanti' do
         }
       end
 
-      boolean = false
-      context "Check configuration files for Privilege escallation #{boolean}." do
+      config_files = ['agent_settings', 'broker_config', 'inventory', 'policy', 'schedule', 'software_distribution', 'vulnerability', 'hardware']
+      [true, false].each do |privilege|
+        context "Check configuration files for Privilege escallation #{privilege}." do
+          let(:params) do
+            super().merge({ 'privilegeescalationallowed' => privilege })
+          end
+
+          config_files.each do |config_file|
+            it {
+              is_expected.to contain_file("/opt/landesk/etc/#{config_file}.conf")
+                .with_ensure('file')
+                .with_owner('landesk')
+                .with_group('landesk')
+                .with_mode('0640')
+                .with_content(%r{^\s*"privilegeEscalationAllowed" : #{privilege}*})
+                .that_notifies('Service[cba8]')
+            }
+          end
+        end
+      end
+
+      context 'Check landesk.conf file for owner/group/mode, Core and Device ID.' do
         let(:params) do
-          { 'core_fqdn' => 'epmcore.example.com',
-            'privilegeescalationallowed' => false,
-            'core_certificate' => '187227ec.0', }
+          super().merge({ 'device_id' => '1d251b42-adf3-c329-b2d6-8fcf146128d4' })
         end
 
-        config_files = ['agent_settings', 'broker_config', 'inventory', 'policy', 'schedule', 'software_distribution', 'vulnerability', 'hardware']
-        config_files.each do |config_file|
-          it {
-            is_expected.to contain_file("/opt/landesk/etc/#{config_file}.conf")
-              .with_ensure('file')
-              .with_owner('landesk')
-              .with_group('landesk')
-              .with_mode('0640')
-              .with_content(%r{^\s*"privilegeEscalationAllowed" : false*})
-          }
-        end
+        it {
+          is_expected.to contain_file('/opt/landesk/etc/landesk.conf')
+            .with_ensure('file')
+            .with_owner('landesk')
+            .with_group('landesk')
+            .with_mode('0644')
+            .with_content(%r{^Core=epmcore\.example\.com.*$})
+            .with_content(%r{^Device ID=\{1d251b42-adf3-c329-b2d6-8fcf146128d4\}$})
+            .that_notifies('Service[cba8]')
+        }
       end
 
       context 'Check permissions of directories that get created by Landesk agents' do
@@ -82,6 +99,20 @@ describe 'ivanti' do
             .with_group('landesk')
         }
       end
+
+
+
+
+context 'Check Exec resources' do
+
+
+ 503             should contain_exec('authconfig-mkhomedir').with({
+ 504               :command => '/usr/sbin/authconfig --enablesssd --enablesssdauth --enablemkhomedir --update',
+ 505               :unless  => "/usr/bin/test \"`/usr/sbin/authconfig --enablesssd --enablesssdauth --enablemkhomedir --test`\" = \"`/usr/sbin/authconfig --test`\"",
+ 506               :require => 'File[sssd.conf]',
+done
+
+
 
       # 34         it { is_expected.to contain_class('chrony::install').that_comes_before('Class[chrony::config]') }
       # 35         it { is_expected.to contain_class('chrony::config').that_notifies('Class[chrony::service]') }
