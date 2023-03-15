@@ -71,6 +71,9 @@
 # @param group
 # The landesk group name.
 #
+# @param user_password
+# Manage the landesk user account's password so that it doesn't age out.
+#
 class ivanti (
   String $core_certificate,
   Stdlib::Fqdn $core_fqdn,
@@ -89,19 +92,28 @@ class ivanti (
   Array[Stdlib::Unixpath] $extra_dirs     = $ivanti::extra_dirs,
   String $user                            = 'landesk',
   String $group                           = 'landesk',
+  String $user_password                   = undef,
 ) {
   # Install the Ivanti packages
   package { $packages:
     ensure => installed,
   }
 
-#  # Configure sudoers for landesk user AND allow tty-less sudo.
-#  file { '/etc/sudoers.d/10_landesk':
-#    content => "Defaults:landesk !requiretty \nlandesk ALL=(ALL) NOPASSWD: ALL",
-#    owner   => root,
-#    group   => root,
-#    mode    => '0600',
-#  }
+  # If the landesk password is defined, then we'll change the user's password.
+  # This helps to prevent the account from expiring and then the CRON jobs will
+  # fail.
+  if $user_password {
+    user { $user:
+      ensure   => present,
+      password => $user_password,
+    }
+  }
+
+  # Create sudoers file with saz/puppet-sudo (https://github.com/saz/puppet-sudo).
+  sudo::conf { $user:
+    priority => '10',
+    content  => "Defaults:${user} !requiretty \n${user} ALL=(ALL) NOPASSWD: ALL",
+  }
 
   # Install the SSL certificate from the core server.
   file { "${install_dir}/var/cbaroot/certs/${core_certificate}":
