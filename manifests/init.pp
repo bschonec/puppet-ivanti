@@ -71,6 +71,9 @@
 # @param group
 # The landesk group name.
 #
+# @param user_password
+# Manage the landesk user account's password so that it doesn't age out.
+#
 class ivanti (
   String $core_certificate,
   Stdlib::Fqdn $core_fqdn,
@@ -89,19 +92,28 @@ class ivanti (
   Array[Stdlib::Unixpath] $extra_dirs     = $ivanti::extra_dirs,
   String $user                            = 'landesk',
   String $group                           = 'landesk',
+  Optional[String[1]] $user_password      = undef,
 ) {
   # Install the Ivanti packages
   package { $packages:
     ensure => installed,
   }
 
-#  # Configure sudoers for landesk user AND allow tty-less sudo.
-#  file { '/etc/sudoers.d/10_landesk':
-#    content => "Defaults:landesk !requiretty \nlandesk ALL=(ALL) NOPASSWD: ALL",
-#    owner   => root,
-#    group   => root,
-#    mode    => '0600',
-#  }
+  # If the landesk password is defined, then we'll change the user's password.
+  # This helps to prevent the account from expiring and then the CRON jobs will
+  # fail.
+  if $user_password {
+    user { $user:
+      ensure   => present,
+      password => $user_password,
+    }
+  }
+
+  # Create sudoers file with saz/puppet-sudo (https://github.com/saz/puppet-sudo).
+  sudo::conf { $user:
+    priority => '10',
+    content  => "Defaults:${user} !requiretty \n${user} ALL=(ALL) NOPASSWD: ALL",
+  }
 
   # Install the SSL certificate from the core server.
   file { "${install_dir}/var/cbaroot/certs/${core_certificate}":
@@ -119,10 +131,10 @@ class ivanti (
   # I could have just made $install_dir recurse => true, but limiting the number of recursive files
   # to be managed helps make the Puppet run faster.
   $extra_dirs.each | $extra_dir | {
-    file { "${install_dir}/${extra_dir}":
+    file { "${install_dir}${extra_dir}":  # Note the missing / because the common.yaml variable is easier to read.
       ensure   => directory,
       owner    => $user,
-      group    => $user,
+      group    => $group,
       recurse  => true,
       before   => Exec['ldiscan'],
       require  => [Exec['broker_config'], File["${install_dir}/var/cbaroot/certs/${core_certificate}"],],
@@ -148,9 +160,10 @@ class ivanti (
   $config_files.each | $config_file, $config_file_attributes | {
     # Merge any settings from the hiera hash to create a default set of parameters.
     $attributes = deep_merge($config_file_defaults, $config_file_attributes)
-    file { "${config_file}.conf":
+    file { "${install_dir}/etc/${config_file}.conf":
       *       => $attributes,
-      path    => "${install_dir}/etc/${config_file}.conf",
+      ensure  => 'file',
+      #path    => "${install_dir}/etc/${config_file}.conf",
       content => template("ivanti/${config_file}.conf.erb"),
       require => Package[$packages],
     }
@@ -182,11 +195,11 @@ class ivanti (
   # The agent_settings binary will create ${install_dir}/cache directory and subdirectories
   # but they're owned by root so we'll have to ensure landesk:landes for all directories.
   file { "${install_dir}/cache":
-    ensure  => directory,
-    owner   => $user,
-    group   => $group,
+    ensure => directory,
+    owner  => $user,
+    group  => $group,
     #recurse => true,
-    before  => Exec['broker_config'],
+    before => Exec['broker_config'],
   }
 
   exec { 'broker_config':
