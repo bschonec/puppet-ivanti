@@ -1,4 +1,6 @@
 ---
+inherit_gem:
+  voxpupuli-test: rubocop.yml
 require:
 - rubocop-performance
 - rubocop-rspec
