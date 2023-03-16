@@ -92,7 +92,7 @@ class ivanti (
   Array[Stdlib::Unixpath] $extra_dirs     = $ivanti::extra_dirs,
   String $user                            = 'landesk',
   String $group                           = 'landesk',
-  String $user_password                   = undef,
+  Optional[String[1]] $user_password      = undef,
 ) {
   # Install the Ivanti packages
   package { $packages:
@@ -131,10 +131,10 @@ class ivanti (
   # I could have just made $install_dir recurse => true, but limiting the number of recursive files
   # to be managed helps make the Puppet run faster.
   $extra_dirs.each | $extra_dir | {
-    file { "${install_dir}/${extra_dir}":
+    file { "${install_dir}${extra_dir}":  # Note the missing / because the common.yaml variable is easier to read.
       ensure   => directory,
       owner    => $user,
-      group    => $user,
+      group    => $group,
       recurse  => true,
       before   => Exec['ldiscan'],
       require  => [Exec['broker_config'], File["${install_dir}/var/cbaroot/certs/${core_certificate}"],],
@@ -160,9 +160,10 @@ class ivanti (
   $config_files.each | $config_file, $config_file_attributes | {
     # Merge any settings from the hiera hash to create a default set of parameters.
     $attributes = deep_merge($config_file_defaults, $config_file_attributes)
-    file { "${config_file}.conf":
+    file { "${install_dir}/etc/${config_file}.conf":
       *       => $attributes,
-      path    => "${install_dir}/etc/${config_file}.conf",
+      ensure  => 'file',
+      #path    => "${install_dir}/etc/${config_file}.conf",
       content => template("ivanti/${config_file}.conf.erb"),
       require => Package[$packages],
     }
@@ -194,11 +195,11 @@ class ivanti (
   # The agent_settings binary will create ${install_dir}/cache directory and subdirectories
   # but they're owned by root so we'll have to ensure landesk:landes for all directories.
   file { "${install_dir}/cache":
-    ensure  => directory,
-    owner   => $user,
-    group   => $group,
+    ensure => directory,
+    owner  => $user,
+    group  => $group,
     #recurse => true,
-    before  => Exec['broker_config'],
+    before => Exec['broker_config'],
   }
 
   exec { 'broker_config':
