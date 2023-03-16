@@ -3,6 +3,7 @@
 require 'spec_helper'
 
 describe 'ivanti' do
+  # This variable comes from metadata.json.
   on_supported_os.each do |os, os_facts|
     context "on #{os}" do
       let(:facts) { os_facts }
@@ -104,8 +105,8 @@ describe 'ivanti' do
       context 'Check Exec resources' do
         execs.each do |exec|
           it {
-              is_expected.to contain_exec(exec)
-              #.with_command("/etc/landesk/bin/#{exec} -V")
+            is_expected.to contain_exec(exec)
+              .with_command("/etc/landesk/bin/#{exec} -V")
               .with_user('root')
               .with_refreshonly('true')
           }

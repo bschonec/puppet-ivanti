@@ -92,7 +92,7 @@ class ivanti (
   Array[Stdlib::Unixpath] $extra_dirs     = $ivanti::extra_dirs,
   String $user                            = 'landesk',
   String $group                           = 'landesk',
-  String $user_password                   = undef,
+  Optional[String[1]] $user_password      = undef,
 ) {
   # Install the Ivanti packages
   package { $packages:
