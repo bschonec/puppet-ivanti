@@ -6,7 +6,6 @@ name: CI
 
 on: pull_request
 
-runs-on: self-hosted
 
 concurrency:
   group: ${{ github.ref_name }}
@@ -16,3 +15,4 @@ jobs:
   puppet:
     name: Puppet
     uses: voxpupuli/gha-puppet/.github/workflows/basic.yml@v1
+    runs-on: self-hosted
