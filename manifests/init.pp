@@ -188,8 +188,8 @@ class ivanti (
     logoutput   => true,
     refreshonly => true,
     require     => Service['cba8'],
-    before      => File["${install_dir}/cache"],
-    notify      => [Exec['broker_config'], File["${install_dir}/cache"],],
+    before      => [File["${install_dir}/cache"], File["${install_dir}/etc/agent_settings.status"],],
+    notify      => [Exec['broker_config'], File["${install_dir}/cache"], File["${install_dir}/etc/agent_settings.status"],],
   }
 
   # The agent_settings binary will create ${install_dir}/cache directory and subdirectories
@@ -198,7 +198,15 @@ class ivanti (
     ensure => directory,
     owner  => $user,
     group  => $group,
-    #recurse => true,
+    before => Exec['vulscan'],
+  }
+
+  # If ${install_dir}/etc/agent_settings.status isn't owned by landesk:landesk then the vulscan
+  # exec will fail.
+  file { "${install_dir}/etc/agent_settings.status":
+    ensure => file,
+    owner  => $user,
+    group  => $group,
     before => Exec['broker_config'],
   }
 
