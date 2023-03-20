@@ -94,6 +94,21 @@ class ivanti (
   String $group                           = 'landesk',
   Optional[String[1]] $user_password      = undef,
 ) {
+
+  $ivanti_gpg_key = '/etc/pki/rpm-gpg/RPM-GPG-KEY-Ivanti'
+
+  file { $ivanti_gpg_key:
+    source => 'puppet:///modules/ivanti/RPM-GPG-KEY-Ivanti',
+    before => Rpm_gpgkey['RPM-GPG-KEY-Ivanti'],
+  }
+
+  # Ensure GPG key is installed before attempting to install the RPM packages.
+  rpm_gpgkey {'RPM-GPG-KEY-Ivanti':
+    keyid  => '5C344736',    # 'gpg RPM-GPG-KEY-Ivanti' shows this
+    path   => $ivanti_gpg_key,
+    before => Package[$packages],
+  }
+
   # Install the Ivanti packages
   package { $packages:
     ensure => installed,

@@ -28,6 +28,10 @@
       "version_requirement": ">= 6.21.0 < 8.0.0"
     },
     {
+      "name": "wcooley-rpm_gpgkey",
+      "version_requirement": ">= 0.1.0"
+    },
+    {
       "name": "saz-sudo",
       "version_requirement": ">= 7.0.0"
     }

@@ -13,6 +13,8 @@ describe 'ivanti' do
           'core_certificate' => '187227ec.0', }
       end
 
+      #TODO:  ensure RPM-GPG-KEY-Ivanti is installed.
+
       context 'Checking for package installation' do
         it { is_expected.to compile.with_all_deps }
 
